@@ -1,3 +1,0 @@
-D:/uch/computer_graphics/hello/build/CMakeFiles/hello_world.dir
-D:/uch/computer_graphics/hello/build/CMakeFiles/ALL_BUILD.dir
-D:/uch/computer_graphics/hello/build/CMakeFiles/ZERO_CHECK.dir
