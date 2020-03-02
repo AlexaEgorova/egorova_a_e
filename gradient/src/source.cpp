@@ -1,8 +1,9 @@
 #include <opencv2\opencv.hpp>
 #include <iostream>
 
-void PourWithGradient(cv::Mat& img, int step, int color_step=1)
-{
+using namespace cv;
+
+void PourWithGradient(Mat& img, int step, int color_step=1) {
   int color = 0;
   for (int i = 0; i + step < img.cols; i += step)
   {
@@ -32,7 +33,7 @@ void PourWithGradient(cv::Mat& img, int step, int color_step=1)
   }
 }
 
-void CorrectGamma(cv::Mat& img, double gamma, double A=1.0) {
+void CorrectGammaByPixels(Mat& img, double gamma, double A=1.0) {
   for (int i = 0; i < img.cols; i++) {
     auto color = img.at<unsigned char>(0, i);
     auto normColor = color / 255.0;
@@ -41,42 +42,48 @@ void CorrectGamma(cv::Mat& img, double gamma, double A=1.0) {
   }
 }
 
-int main()
-{
-  cv::Mat image(800, 800, CV_8U, cv::Scalar(50));
+Mat CorrectGammaByMatrix(Mat& givenMat, double gamma, double A=1.0) {
+  Mat convertedGivenMat;
+  givenMat.convertTo(convertedGivenMat, CV_32F);
+  convertedGivenMat /= 255.0;
+
+  Mat poweredMat;
+  pow(convertedGivenMat, gamma, poweredMat);
+  poweredMat *= 255.0;
+
+  return A*poweredMat;
+}
+
+int main() {
+  Mat image(285, 778, CV_8U, Scalar(0));
 
   int wid = 768;
   int hei = 60;
 
-  cv::Rect roiLongGradient(0, 0, wid, hei);
-  cv::Mat matLongGradient = image(roiLongGradient);
-
-  cv::Rect roiGamma(0, 105, wid, hei);
-  cv::Mat matGamma = image(roiGamma);
-
-  cv::Rect roiStepGradient(0, 310, wid, hei);
-  cv::Mat matStepGradient = image(roiStepGradient);
-
-  cv::Rect roiStepGamma(0, 415, wid, hei);
-  cv::Mat matStepGamma = image(roiStepGamma);
-
+  Rect roiLongGradient(5, 5, wid, hei);
+  Mat matLongGradient = image(roiLongGradient);
   PourWithGradient(matLongGradient, 3);
-  PourWithGradient(matGamma, 3);
 
+  Rect roiGamma(5, 65, wid, hei);
+  Mat matGamma = image(roiGamma);
+  matLongGradient.copyTo(matGamma);
+  CorrectGammaByMatrix(matGamma, 2).convertTo(matGamma, image.type());
+
+  Rect roiStepGradient(5, 160, wid, hei);
+  Mat matStepGradient = image(roiStepGradient);
   PourWithGradient(matStepGradient, 30, 10);
   for (int i = matStepGradient.cols-1; i > matStepGradient.cols-20; i--)
     matStepGradient.col(i).setTo(255);
 
-  PourWithGradient(matStepGamma, 30, 10);
+  Rect roiStepGamma(5, 220, wid, hei);
+  Mat matStepGamma = image(roiStepGamma);
+  matStepGradient.copyTo(matStepGamma);
   for (int i = matStepGamma.cols - 1; i > matStepGamma.cols - 20; i--)
     matStepGamma.col(i).setTo(255);
+  CorrectGammaByMatrix(matStepGamma, 2.4).convertTo(matStepGamma, image.type());
 
-  CorrectGamma(matGamma, 2);
-  CorrectGamma(matStepGamma, 2);
-
-  cv::namedWindow("Gradient", CV_WINDOW_NORMAL);
+  namedWindow("Gradient", CV_WINDOW_NORMAL);
   imshow("Gradient", image);
-  cv::waitKey(0);
-
+  waitKey(0);
 }
 
